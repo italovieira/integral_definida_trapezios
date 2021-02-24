@@ -6,6 +6,7 @@
 typedef struct {
   int t;
   int n;
+  int *i;
   double a;
   double b;
   double (*f) (double);
@@ -24,14 +25,24 @@ void * subarea(Values *values) {
   double (*f) (double) = values->f;
   int local_n = values->n / values->t;
   double h = (values->b - values->a) / values->n;
-  double local_a = values->a + h * local_n;
-  double local_b = local_a + local_n * h;
+  double local_a = values->a + h * local_n * *values->i;
+  double local_b = local_a + h * local_n;
 
   double acc = ((*f)(local_a) + (*f)(local_b)) / 2;
   for (int i = 1; i < local_n; i++) {
-    float x_i = local_a + i * h;
+    double x_i = local_a + i * h;
     acc += (*f)(x_i);
   }
+
+
+  //int remainder = values->n % values->t;
+  //if (remainder > 0) {
+  //  local_a = values->a + local_n * values->t;
+  //  local_b = local_a + remainder;
+  //  for (int i = 0; i < remainder; i++) {
+  //    double x_i = local_a + i * h;
+  //  }
+  //}
 
   double *area = malloc(sizeof (double));
   *area = h * acc;
@@ -46,11 +57,8 @@ double area(Values *values) {
 
   // Criando threads
   for (int i = 0; i < t; i++) {
-    int status = pthread_create(&threads[i], NULL, (void *) subarea, (void *) values);
-
-    if (status < 0) {
-      exit(1);
-    }
+    values->i = &i;
+    pthread_create(&threads[i], NULL, (void *) subarea, (void *) values);
   }
 
   // Obtendo o valor de retorno das threads e somando para obter a área total
