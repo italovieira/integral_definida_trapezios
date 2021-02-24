@@ -36,7 +36,7 @@ void * subarea(Values *values) {
   double local_b = local_a + h * (local_n + rest);
 
   double acc = ((*f)(local_a) + (*f)(local_b)) / 2;
-  for (int i = 1; i < local_n + rest; i++) {
+  for (int i = 1; i < (local_n + rest); i++) {
     double x_i = local_a + i * h;
     acc += (*f)(x_i);
   }
@@ -61,7 +61,11 @@ double area(int t, int n, double a, double b, double (*f) (double)) {
     values->t = t;
     values->f = f;
 
-    pthread_create(&threads[i], NULL, (void *) subarea, (void *) values);
+    int status = pthread_create(&threads[i], NULL, (void *) subarea, (void *) values);
+    if (status != 0) {
+      fprintf(stderr, "Falha ao tentar criar uma thread.");
+      exit(1);
+    }
   }
 
   // Obtendo o valor de retorno das threads e somando para obter a área total
@@ -76,6 +80,7 @@ double area(int t, int n, double a, double b, double (*f) (double)) {
 
 int main(int argc, char **argv) {
   if (argc != 3) {
+    fprintf(stderr, "Está faltando o número de threads e/ou trapézios\n");
     return 1;
   }
 
@@ -84,11 +89,6 @@ int main(int argc, char **argv) {
 
   printf("Cálculo será feito usando %d threads e %d trapézios\n\n", t, n);
 
-  double a = 0;
-  double b = 10;
-  printf("Teste com f1 (a = 0, b = 10): %.2e\n", area(t, n, a, b, &f1));
-
-  a = 0;
-  b = 2 * M_PI;
-  printf("Teste com f2 (a = 0, b = 2*PI): %.2e\n", area(t, n, a, b, &f2));
+  printf("Teste com f1 (a = 0, b = 10): %.2e\n", area(t, n, 0, 10, &f1));
+  printf("Teste com f2 (a = 0, b = 2*PI): %.2e\n", area(t, n, 0, 2 * M_PI, &f2));
 }
