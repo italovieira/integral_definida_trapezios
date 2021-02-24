@@ -1,14 +1,20 @@
 #include <stdio.h>
 
+typedef struct {
+  int n;
+  float a;
+  float b;
+} Trapezoids;
+
+
 int f(int x) {
   return 5;
 }
 
-float area(void) {
-  int a = 0;
-  int b = 10;
-  int n = 200;
-
+float area(Trapezoids trapezoids) {
+  int n = trapezoids.n;
+  int a = trapezoids.a;
+  int b = trapezoids.b;
 
   float h = (float) (b - a) / n;
 
@@ -26,6 +32,7 @@ float area(void) {
 }
 
 int main(void) {
-  float y = area();
+  Trapezoids trapezoids = {200, 0, 10};
+  float y = area(trapezoids);
   printf("O resultado é %f", y);
 }
