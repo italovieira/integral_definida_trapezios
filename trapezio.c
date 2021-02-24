@@ -6,7 +6,7 @@
 typedef struct {
   int t;
   int n;
-  int *i;
+  int tid;
   double a;
   double b;
   double (*f) (double);
@@ -25,24 +25,18 @@ void * subarea(Values *values) {
   double (*f) (double) = values->f;
   int local_n = values->n / values->t;
   double h = (values->b - values->a) / values->n;
-  double local_a = values->a + h * local_n * *values->i;
-  double local_b = local_a + h * local_n;
+
+  // Tratamento para n / t não inteiro
+  int remainder = values->n % values->t;
+  int rest = remainder > 0 && values->tid < remainder;
+  double local_a = values->a + h * (local_n + rest) * values->tid;
+  double local_b = local_a + h * (local_n + rest);
 
   double acc = ((*f)(local_a) + (*f)(local_b)) / 2;
-  for (int i = 1; i < local_n; i++) {
+  for (int i = 1; i < local_n + rest; i++) {
     double x_i = local_a + i * h;
     acc += (*f)(x_i);
   }
-
-
-  //int remainder = values->n % values->t;
-  //if (remainder > 0) {
-  //  local_a = values->a + local_n * values->t;
-  //  local_b = local_a + remainder;
-  //  for (int i = 0; i < remainder; i++) {
-  //    double x_i = local_a + i * h;
-  //  }
-  //}
 
   double *area = malloc(sizeof (double));
   *area = h * acc;
@@ -50,14 +44,20 @@ void * subarea(Values *values) {
   pthread_exit(area);
 }
 
-double area(Values *values) {
-  int t = values->t;
+double area(int t, int n, double a, double b, double (*f) (double)) {
   pthread_t threads[t];
   double *acc_areas[t];
 
   // Criando threads
   for (int i = 0; i < t; i++) {
-    values->i = &i;
+    Values *values = malloc(sizeof (Values));
+    values->tid = i;
+    values->n = n;
+    values->a = a;
+    values->b = b;
+    values->t = t;
+    values->f = f;
+
     pthread_create(&threads[i], NULL, (void *) subarea, (void *) values);
   }
 
@@ -81,19 +81,11 @@ int main(int argc, char **argv) {
 
   printf("Cálculo será feito usando %d threads e %d trapézios\n\n", t, n);
 
-  Values *values_f1 = malloc(sizeof (Values));
-  values_f1->n = n;
-  values_f1->a = 0;
-  values_f1->b = 10;
-  values_f1->t = t;
-  values_f1->f = &f1;
-  printf("Teste com f1 (a = 0, b = 10): %.2e\n", area(values_f1));
+  double a = 0;
+  double b = 10;
+  printf("Teste com f1 (a = 0, b = 10): %.2e\n", area(t, n, a, b, &f1));
 
-  Values *values_f2 = malloc(sizeof (Values));
-  values_f2->n = n;
-  values_f2->a = 0;
-  values_f2->b = 2 * M_PI;
-  values_f2->t = t;
-  values_f2->f = &f2;
-  printf("Teste com f2 (a = 0, b = 2*PI): %.2e\n", area(values_f2));
+  a = 0;
+  b = 2 * M_PI;
+  printf("Teste com f2 (a = 0, b = 2*PI): %.2e\n", area(t, n, a, b, &f2));
 }
