@@ -3,6 +3,8 @@
 #include <pthread.h>
 #include <math.h>
 
+#define MIN(a, b) ((a) < (b) ? a : b)
+
 typedef struct {
   int t;
   int n;
@@ -26,10 +28,11 @@ void * subarea(Values *values) {
   int local_n = values->n / values->t;
   double h = (values->b - values->a) / values->n;
 
-  // Tratamento para n / t não inteiro
+  // Tratamento para n/t não inteiro
   int remainder = values->n % values->t;
-  int rest = remainder > 0 && values->tid < remainder;
-  double local_a = values->a + h * (local_n + rest) * values->tid;
+  int rest = values->tid < remainder;
+  int increment = MIN(values->tid, remainder);
+  double local_a = values->a + h * (local_n * values->tid + increment);
   double local_b = local_a + h * (local_n + rest);
 
   double acc = ((*f)(local_a) + (*f)(local_b)) / 2;
