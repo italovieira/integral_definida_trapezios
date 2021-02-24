@@ -1,4 +1,8 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+
+#define NTHREADS 5
 
 typedef struct {
   int n;
@@ -11,28 +15,48 @@ int f(int x) {
   return 5;
 }
 
-float area(Trapezoids trapezoids) {
-  int n = trapezoids.n;
-  int a = trapezoids.a;
-  int b = trapezoids.b;
+void * area(Trapezoids *trapezoids) {
+  int local_n = trapezoids->n / NTHREADS;
+  int local_a = trapezoids->a;
+  float h = (float) (trapezoids->b - trapezoids->a) / trapezoids->n;
+  int local_b = local_a + h;
 
-  float h = (float) (b - a) / n;
-
-  float acc = (float) (f(a) + f(b)) / 2;
-
-  for (int i = 1; i < n; i++) {
-    float x_i = a + i * h;
+  float acc = (float) (f(local_a) + f(local_b)) / 2;
+  for (int i = 1; i < local_n; i++) {
+    float x_i = local_a + i * h;
     acc += f(x_i);
   }
-  printf("area %f", acc);
 
-  float area_total = h * acc;
+  float *area = malloc(sizeof (float));
+  *area = h * acc;
 
-  return area_total;
+  pthread_exit(area);
 }
 
 int main(void) {
-  Trapezoids trapezoids = {200, 0, 10};
-  float y = area(trapezoids);
-  printf("O resultado é %f", y);
+  pthread_t threads[NTHREADS];
+  float *acc_areas[NTHREADS];
+
+  Trapezoids *trapezoids = malloc(sizeof (Trapezoids));
+  trapezoids->n = 200;
+  trapezoids->a = 0;
+  trapezoids->b = 10;
+
+  // Criando threads
+  for (int i = 0; i < NTHREADS; i++) {
+    int status = pthread_create(&threads[i], NULL, (void *) area, (void *) trapezoids);
+
+    if (status < 0) {
+      return 1;
+    }
+  }
+
+  // Obtendo o valor de retorno das threads e somando para obter a área total
+  float total_area = 0;
+  for (int i = 0; i < NTHREADS; i++) {
+    pthread_join(threads[i], (void *) &acc_areas[i]);
+    total_area += *acc_areas[i];
+  }
+
+  printf("%.2e\n", total_area);
 }
