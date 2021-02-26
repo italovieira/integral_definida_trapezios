@@ -1,6 +1,6 @@
 # Cálculo de integral definida por área de trapézios
 
-Use `gcc -g -pthread -lm trapezio.c -o trapezio` para compilar.
+Use `gcc -pthread -lm trapezio.c` para compilar.
 
 Para teste com t = 6 e n = 120:
 `./trapezio 6 120`
