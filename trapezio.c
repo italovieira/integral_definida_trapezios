@@ -43,6 +43,8 @@ void * subarea(Values *values) {
 
   double *area = malloc(sizeof (double));
   *area = h * acc;
+  
+  free(values);
 
   pthread_exit(area);
 }
